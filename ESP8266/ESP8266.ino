@@ -11,7 +11,7 @@
 const char* ssid     = "NAO";
 const char* password = "RobotWifi";
 
-const char* host = "data.sparkfun.com";
+const char* host = "webhotel.herningsholm.dk";
 const char* streamId   = "1n1N0qYOd7HLzyN4E5ZN";
 const char* privateKey = "0mqdkZXaR6U1kGydND8y";
 
@@ -43,7 +43,7 @@ int value = 0;
 
 void loop() {
   delay(5000);
-  ++value;
+  //++value;
 
   Serial.print("connecting to ");
   Serial.println(host);
@@ -57,12 +57,12 @@ void loop() {
   }
   
   // We now create a URI for the request
-  String url = "/input/";
-  url += streamId;
+  String url = "/joha2514/slikautomat/hentbestilling.php";
+  /*url += streamId;
   url += "?private_key=";
   url += privateKey;
   url += "&lkj=";
-  url += value;
+  url += value;*/
   
   Serial.print("Requesting URL: ");
   Serial.println(url);
