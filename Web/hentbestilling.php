@@ -10,7 +10,7 @@ if ($first) {
 	echo $first["mm"] . ';';
 	echo $first["jellybeans"];
 } else {
-	// ingen nye bestillinger
+	echo "ingen nye bestillinger.";
 }
 
 mysqli_close($db_con);
