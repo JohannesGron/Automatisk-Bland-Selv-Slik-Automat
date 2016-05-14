@@ -1,92 +1,105 @@
-/*
- *  This sketch sends data via HTTP GET requests to data.sparkfun.com service.
- *
- *  You need to get streamId and privateKey at data.sparkfun.com and paste them
- *  below. Or just customize this script to talk to other HTTP servers.
- *
- */
-
 #include <ESP8266WiFi.h>
+#include <Wire.h>
 
-const char* ssid     = "NAO";
-const char* password = "RobotWifi";
+int request(const char* url, char* buf);
+void filterResponse(char* buf, int len);
 
-const char* host = "webhotel.herningsholm.dk";
-const char* streamId   = "1n1N0qYOd7HLzyN4E5ZN";
-const char* privateKey = "0mqdkZXaR6U1kGydND8y";
+bool sendOrder = true;
+
+char idToDelete[6];
+int bufIdx = 0;
 
 void setup() {
   Serial.begin(9600);
-  delay(10);
+  Wire.begin(0, 2);
 
-  // We start by connecting to a WiFi network
-
-  Serial.println();
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-  
-  WiFi.begin(ssid, password);
-  
+  WiFi.begin("NAO", "RobotWifi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
   }
-
-  Serial.println("");
-  Serial.println("WiFi connected");  
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
 }
 
-int value = 0;
+unsigned long lastUpdate = 0;
 
 void loop() {
-  delay(5000);
-  //++value;
+  if (!sendOrder) {
+    while (Wire.available()) {
+      Serial.write(Wire.read());
+      idToDelete[bufIdx] = (char)Wire.read();
+      //Serial.println((int)idToDelete[bufIdx]);
+      if (idToDelete[bufIdx] == '\0') {
+        char url[48];
+        strcpy(url, "/joha2514/slikautomat/bestillinghentet.php?id=");
+        strcat(url, idToDelete);
+        Serial.println(url);
+        
+        char responseBuf[512];
+        request(url, responseBuf);
+        
+        bufIdx = 0;
+        sendOrder = true;
+      } else {
+        bufIdx++;
+      }
+    }
+  } else {
+    if (millis() - lastUpdate > 5000) {
+      lastUpdate = millis();
 
-  Serial.print("connecting to ");
-  Serial.println(host);
-  
-  // Use WiFiClient class to create TCP connections
-  WiFiClient client;
-  const int httpPort = 80;
-  if (!client.connect(host, httpPort)) {
-    Serial.println("connection failed");
-    return;
+      char responseBuf[512];
+      int responseLen = request("/joha2514/slikautomat/hentbestilling.php", responseBuf);
+      filterResponse(responseBuf, responseLen);
+
+      Wire.requestFrom(8, 6);
+      sendOrder = false;
+    }
   }
+}
+
+int request(const char* url, char* buf) {
+  WiFiClient client;
+      
+  if (!client.connect("webhotel.herningsholm.dk", 80)) {
+    return 0;
+  }
+
+  char tmp[256];
+  strcpy(tmp, "GET ");
+  strcat(tmp, url);
+  strcat(tmp, " HTTP/1.1\r\nHost: webhotel.herningsholm.dk\r\nConnection: close\r\n\r\n");
+
+  client.print(tmp);
   
-  // We now create a URI for the request
-  String url = "/joha2514/slikautomat/hentbestilling.php";
-  /*url += streamId;
-  url += "?private_key=";
-  url += privateKey;
-  url += "&lkj=";
-  url += value;*/
-  
-  Serial.print("Requesting URL: ");
-  Serial.println(url);
-  
-  // This will send the request to the server
-  client.print(String("GET ") + url + " HTTP/1.1\r\n" +
-               "Host: " + host + "\r\n" + 
-               "Connection: close\r\n\r\n");
-  int timeout = millis() + 5000;
+  unsigned long timeout = millis() + 5000;
   while (client.available() == 0) {
     if (timeout - millis() < 0) {
-      Serial.println(">>> Client Timeout !");
       client.stop();
+      return 0;
+    }
+  }
+
+  int i = 0;
+  
+  while (client.available()) {
+    buf[i] = (char)client.read();
+    i++;
+  }
+
+  return i;
+}
+
+void filterResponse(char* buf, int len) {
+  for (int i = 2; i < len - 1; i++) {
+    if (buf[i] == '\n' && buf[i - 2] == '\n') {
+      Wire.beginTransmission(8);
+      for (int j = i + 1; j < len; j++) {
+        Wire.write(buf[j]);
+      }
+      Wire.write((char)'\0');
+      Wire.endTransmission();
+
       return;
     }
   }
-  
-  // Read all the lines of the reply from server and print them to Serial
-  while(client.available()){
-    String line = client.readStringUntil('\r');
-    Serial.print(line);
-  }
-  
-  Serial.println();
-  Serial.println("closing connection");
 }
 
