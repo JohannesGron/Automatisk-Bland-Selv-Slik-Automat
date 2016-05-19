@@ -1,0 +1,99 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>Slikautomat</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta charset="utf-8" />
+
+		<link href='http://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+		<script type="text/javascript">
+
+			//Dette bruges til at spotte om brugeren har registeret en bestilling ved at kigge på respons url'en
+			var url = window.location.href;
+			if (url.split("#")[1] == "done") {
+				alert("Din bestilling er modtaget");
+			}
+
+			//Denne funktion bruges til at opdatere stk. værdien i HTML samt vise den samlede pris. 
+			function updateScroolText(id) {
+				document.getElementById(id + "_text").innerHTML = "(" + document.getElementById(id + "_value").value + " stk.):";
+				var pris = (parseInt(document.getElementById("mm_value").value) * 0.5) + (parseInt(document.getElementById("jb_value").value) * 0.5) + (parseInt(document.getElementById("pk_value").value) * 0.5);	
+				document.getElementById("pris").innerHTML = "Pris: " + pris + " kr.";
+			}
+
+			//Denne funktion bruges til at tjekke om en registering skal godkendes - hvis ikke så skal brugeren have det at vide
+			function checkValid() {
+				var samlet = parseInt(document.getElementById("mm_value").value) + parseInt(document.getElementById("jb_value").value) + parseInt(document.getElementById("pk_value").value);
+				var returnQ = true;
+				var reason = 0;
+				if (samlet > 700) {	
+					reason = 1;
+				}
+				if (document.getElementById("name").value == "") {
+					reason = 2;
+				}
+				if (reason != 0) {
+					if (reason == 1) {
+						alert("Du kan ikke bestille over 700 gram pr. bestilling");
+					} else {
+						alert("Vælg et navn");
+					}
+					return false;
+				}
+			}
+		</script>
+		<style type="text/css">
+			*{
+			    margin:0;
+			    padding:0;
+			    font-family: Lato;
+			}
+			html{
+				width: 100%;
+				height: 100%;
+			}
+			body{
+				width: 100%;
+				height: 100%;
+			}
+			#content{
+			  	float:left;
+			  	height: 100%;
+			  	width: 100%;
+				text-align: center;
+			}
+			#welcome{
+				font-size: 40px;
+				padding-top: 60px;
+			}
+			form {
+				padding-top: 150px;
+				padding-top: 
+			}
+			input {
+				margin-top: 20px;
+			}
+			#bestil {
+				font-size: 18px;
+			}
+			#pris {
+				margin-top: 20px;
+				font-weight: bold;
+			}
+		</style>
+	</head>
+		
+	<body>
+		<div id="content">
+			<p id="welcome">Velkommen!</p><p>Bestil slik nedenfor</p>
+			<form action="bestil.php" method="POST">
+			  <a>Navn: </a><input type="text" id="name" name="name"><br>
+			  <a>M&M </a><a id="mm_text">(200 stk.):</a><input type="range" name="mm" id="mm_value" min="70" max="700" step="1" value="200" oninput="updateScroolText('mm')" onchange="updateScroolText('mm')"></br>
+			  <a>Jelly Beans </a><a id="jb_text">(200 stk.):</a><input type="range" name="jb" id="jb_value" min="70" max="700" step="1" value="200" oninput="updateScroolText('jb')" onchange="updateScroolText('jb')"></br>
+			  <a>Pinocchio </a><a id="pk_text">(200 stk.):</a><input type="range" name="pk" id="pk_value" min="70" max="700" step="1" value="200" oninput="updateScroolText('pk')" onchange="updateScroolText('pk')"></br>
+			  <p id="pris">Pris: 300 kr.</p>
+			  <input type="submit" id="bestil" onclick="return checkValid();" value="Bestil slik!">
+			</form>
+		</div>
+	</body>
+</html>	
